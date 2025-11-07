@@ -62,16 +62,39 @@ func _unhandled_input(event):
 		print("Clicked at global:", global_mouse_pos, "Results:", results.size())
 
 		if results.size() > 0:
+			# Find the topmost draggable shape (highest z_index or scene tree order)
+			var topmost_shape: Node2D = null
+			var topmost_z_index = -999999
+			var topmost_tree_index = -1
+			
 			for res in results:
 				print("Hit Area2D:", res.collider.name, "Parent:", res.collider.get_parent().name)
 				# Check if the Area2D's parent is in the draggable group
 				var parent = res.collider.get_parent()
 				if parent and parent.is_in_group("draggable"):
-					selected_shape = parent
-					offset = selected_shape.global_position - global_mouse_pos
-					print("Selected shape:", selected_shape.name)
-					return
-			print("Hit something but not draggable")
+					var shape_z = parent.z_index
+					var shape_tree_index = parent.get_index()
+					print("  Shape z_index:", shape_z, "tree index:", shape_tree_index)
+					
+					# Compare by z_index first, then by tree index if z_index is the same
+					if topmost_shape == null or shape_z > topmost_z_index or (shape_z == topmost_z_index and shape_tree_index > topmost_tree_index):
+						topmost_shape = parent
+						topmost_z_index = shape_z
+						topmost_tree_index = shape_tree_index
+			
+			if topmost_shape:
+				selected_shape = topmost_shape
+				offset = selected_shape.global_position - global_mouse_pos
+				print("Selected topmost shape:", selected_shape.name, "z:", topmost_z_index, "index:", topmost_tree_index)
+				
+				# Bring selected shape to front by moving it to the end of parent's children
+				var parent = selected_shape.get_parent()
+				if parent:
+					parent.move_child(selected_shape, parent.get_child_count() - 1)
+					print("Moved", selected_shape.name, "to front")
+				return
+			else:
+				print("Hit something but not draggable")
 		else:
 			print("No shape hit")
 
