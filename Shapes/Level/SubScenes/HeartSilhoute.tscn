@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://vysppwv5pfgn"]
+
+[ext_resource type="Texture2D" uid="uid://cpl4vr0gn2aqu" path="res://Assets/Shapes/Vector 1.png" id="1_jungw"]
+
+[node name="HeartSilhouetteNode" type="Area2D"]
+
+[node name="Vector1" type="Sprite2D" parent="."]
+texture = ExtResource("1_jungw")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+build_mode = 1
+polygon = PackedVector2Array(-158, -250, -2, -92, 158, -253, 327, -81, 1, 251, -328, -79)

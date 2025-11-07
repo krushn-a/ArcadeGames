@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3 uid="uid://cj6r45uplfibb"]
+
+[ext_resource type="PackedScene" uid="uid://vysppwv5pfgn" path="res://Level/SubScenes/HeartSilhoute.tscn" id="1_yrgtc"]
+[ext_resource type="PackedScene" uid="uid://bxk2ovqdxcy2i" path="res://Level/SubScenes/Rectangle.tscn" id="2_h0wqr"]
+[ext_resource type="Script" uid="uid://u17gyprby4r7" path="res://System/Scripts Manager/ShapeMatch.gd" id="3_h0wqr"]
+[ext_resource type="Script" uid="uid://vawqyyk2g7hm" path="res://System/Scripts Manager/InputManager.gd" id="4_23d6r"]
+
+[node name="Tutorial1" type="Node2D"]
+script = ExtResource("4_23d6r")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(0.62, 0.62)
+
+[node name="HeartSilhouetteNode" parent="." instance=ExtResource("1_yrgtc")]
+position = Vector2(-547, 1)
+
+[node name="RectangleNode" parent="." instance=ExtResource("2_h0wqr")]
+position = Vector2(87.000015, -195.99997)
+scale = Vector2(0.7, 0.7)
+
+[node name="RectangleNode2" parent="." instance=ExtResource("2_h0wqr")]
+position = Vector2(679, -392.00003)
+rotation = 1.5707964
+scale = Vector2(0.7, 0.7)
+
+[node name="Node" type="Node2D" parent="."]
+script = ExtResource("3_h0wqr")
+silhouette_node_path = NodePath("../HeartSilhouetteNode")
+required_shapes = Array[NodePath]([NodePath("../RectangleNode"), NodePath("../RectangleNode2")])
+
+[node name="Node2" type="Node2D" parent="."]

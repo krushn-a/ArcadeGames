@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://bxk2ovqdxcy2i"]
+
+[ext_resource type="Script" uid="uid://8m4s672fd2oo" path="res://Scripts/Shape Scripts/ShapeDrag.gd" id="1_c3661"]
+[ext_resource type="Texture2D" uid="uid://c67xkedc1duc1" path="res://Assets/Shapes/Vector 2.png" id="1_ijah0"]
+
+[node name="RectangleNode" type="Node2D" groups=["draggable"]]
+script = ExtResource("1_c3661")
+
+[node name="Vector2" type="Sprite2D" parent="."]
+position = Vector2(552, 289)
+texture = ExtResource("1_ijah0")
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Area2D"]
+position = Vector2(550, 289)
+build_mode = 1
+polygon = PackedVector2Array(-119, -228, 116, -228, 116, 229, -118, 230)
+
+[connection signal="input_event" from="Area2D" to="." method="_on_area_2d_input_event"]

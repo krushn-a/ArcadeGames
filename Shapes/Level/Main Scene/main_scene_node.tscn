@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://tpf2utdmrgvx"]
+
+[node name="MainScene" type="Node2D"]
+
+[node name="LevelContainer" type="Node2D" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="SilhouetteManager" type="Node" parent="."]
