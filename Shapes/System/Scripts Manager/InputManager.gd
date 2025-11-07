@@ -4,32 +4,16 @@ var selected_shape: Node2D = null
 var offset: Vector2
 
 func _ready():
-	# Debug: Print all Area2D nodes in the scene
+	# Fix CollisionPolygon2D build_mode for Area2D shapes
 	await get_tree().process_frame
-	print("\n=== Debugging Area2D nodes ===")
 	for node in get_tree().get_nodes_in_group("draggable"):
-		print("Draggable node:", node.name, "at position:", node.global_position)
 		for child in node.get_children():
 			if child is Area2D:
-				print("  - Has Area2D child:", child.name, "at global pos:", child.global_position)
-				print("    Collision layer:", child.collision_layer)
-				print("    Collision mask:", child.collision_mask)
-				print("    Monitorable:", child.monitorable)
-				print("    Monitoring:", child.monitoring)
 				for collision_child in child.get_children():
 					if collision_child is CollisionPolygon2D:
-						print("    - Collision shape:", collision_child.name, "at global pos:", collision_child.global_position)
-						print("      Local position:", collision_child.position)
-						print("      Polygon points:", collision_child.polygon.size(), "disabled:", collision_child.disabled)
-						print("      Build mode:", collision_child.build_mode)
-						# FIX: Change build_mode from 1 (segments) to 0 (solids) for Area2D
+						# Fix: Change build_mode from 1 (segments) to 0 (solids) for Area2D
 						if collision_child.build_mode == 1:
-							print("      WARNING: Fixing build_mode from 1 to 0")
 							collision_child.build_mode = 0
-					elif collision_child is CollisionShape2D:
-						print("    - Collision shape:", collision_child.name, "at global pos:", collision_child.global_position)
-						print("      Local position:", collision_child.position)
-	print("=== End debug ===\n")
 
 func _unhandled_input(event):
 	if event.is_action_pressed("Mouse_click_drag"):
@@ -59,8 +43,6 @@ func _unhandled_input(event):
 
 		var results = space_state.intersect_point(params)
 
-		print("Clicked at global:", global_mouse_pos, "Results:", results.size())
-
 		if results.size() > 0:
 			# Find the topmost draggable shape (highest z_index or scene tree order)
 			var topmost_shape: Node2D = null
@@ -68,13 +50,11 @@ func _unhandled_input(event):
 			var topmost_tree_index = -1
 			
 			for res in results:
-				print("Hit Area2D:", res.collider.name, "Parent:", res.collider.get_parent().name)
 				# Check if the Area2D's parent is in the draggable group
 				var parent = res.collider.get_parent()
 				if parent and parent.is_in_group("draggable"):
 					var shape_z = parent.z_index
 					var shape_tree_index = parent.get_index()
-					print("  Shape z_index:", shape_z, "tree index:", shape_tree_index)
 					
 					# Compare by z_index first, then by tree index if z_index is the same
 					if topmost_shape == null or shape_z > topmost_z_index or (shape_z == topmost_z_index and shape_tree_index > topmost_tree_index):
@@ -85,22 +65,14 @@ func _unhandled_input(event):
 			if topmost_shape:
 				selected_shape = topmost_shape
 				offset = selected_shape.global_position - global_mouse_pos
-				print("Selected topmost shape:", selected_shape.name, "z:", topmost_z_index, "index:", topmost_tree_index)
 				
 				# Bring selected shape to front by moving it to the end of parent's children
 				var parent = selected_shape.get_parent()
 				if parent:
 					parent.move_child(selected_shape, parent.get_child_count() - 1)
-					print("Moved", selected_shape.name, "to front")
 				return
-			else:
-				print("Hit something but not draggable")
-		else:
-			print("No shape hit")
 
 	elif event.is_action_released("Mouse_click_drag"):
-		if selected_shape:
-			print("Released:", selected_shape.name)
 		selected_shape = null
 
 	elif event is InputEventMouseMotion and selected_shape:

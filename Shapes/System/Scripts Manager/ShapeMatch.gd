@@ -2,7 +2,8 @@ extends Node2D
 
 @export var silhouette_node_path: NodePath
 @export var required_shapes: Array[NodePath]
-@export var match_threshold: float = 0.85  # 85% coverage needed
+@export var match_threshold: float = 0.95  # 95% coverage needed (stricter)
+@export var overhang_penalty: float = 0.3  # Penalty for shapes outside silhouette
 
 signal level_completed
 
@@ -37,13 +38,19 @@ func is_match_successful() -> bool:
 	for shape_path in required_shapes:
 		var shape = get_node_or_null(shape_path)
 		if shape:
-			var shape_poly: CollisionPolygon2D = shape.get_node_or_null("CollisionPolygon2D")
-			if shape_poly:
-				var world_poly = shape_to_world(shape, shape_poly.polygon)
-				shape_polygons.append(world_poly)
+			# Look for CollisionPolygon2D inside Area2D child
+			var area2d = shape.get_node_or_null("Area2D")
+			if area2d:
+				var shape_poly: CollisionPolygon2D = area2d.get_node_or_null("CollisionPolygon2D")
+				if shape_poly:
+					var world_poly = shape_to_world(area2d, shape_poly.polygon)
+					shape_polygons.append(world_poly)
 
 	if shape_polygons.is_empty():
 		return false
+
+	# Convert silhouette polygon to world space
+	var world_silhouette = shape_to_world(silhouette, silhouette_poly.polygon)
 
 	# merge all shape polygons into a single union
 	var merged_poly: Array = []
@@ -60,14 +67,28 @@ func is_match_successful() -> bool:
 
 	# compute overlap area between merged shapes and silhouette
 	var overlap_area: float = 0.0
+	var total_shapes_area: float = 0.0
+	
 	for poly in merged_poly:
-		var intersections = Geometry2D.intersect_polygons(silhouette_poly.polygon, poly)
+		# Calculate how much of the shapes are inside the silhouette
+		var intersections = Geometry2D.intersect_polygons(world_silhouette, poly)
 		for inter in intersections:
 			overlap_area += polygon_area(inter)
+		
+		# Calculate total area of merged shapes
+		total_shapes_area += polygon_area(poly)
 
+	# Calculate overhang (shapes outside silhouette)
+	var overhang_area = total_shapes_area - overlap_area
+	
+	# Coverage of silhouette
 	var coverage = overlap_area / silhouette_area
-	print("Coverage:", coverage)
-	return coverage >= match_threshold
+	
+	# Penalty for shapes sticking out
+	var overhang_ratio = overhang_area / silhouette_area
+	var final_score = coverage - (overhang_ratio * overhang_penalty)
+	
+	return final_score >= match_threshold
 
 
 # --- Helper functions ---
