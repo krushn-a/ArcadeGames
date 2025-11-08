@@ -15,14 +15,13 @@ zoom = Vector2(0.62, 0.62)
 position = Vector2(-547, 1)
 
 [node name="RectangleNode" parent="." instance=ExtResource("2_h0wqr")]
-position = Vector2(145.99997, -216)
-rotation = -0.7853982
-scale = Vector2(0.995, 0.995)
+position = Vector2(508, -7.0000153)
+rotation = 1.5707964
+scale = Vector2(0.7, 0.7)
 
 [node name="RectangleNode2" parent="." instance=ExtResource("2_h0wqr")]
 position = Vector2(505.99994, -6.9999895)
-rotation = 0.7853982
-scale = Vector2(0.995, 0.995)
+scale = Vector2(0.7, 0.7)
 
 [node name="Node" type="Node2D" parent="."]
 script = ExtResource("3_h0wqr")
