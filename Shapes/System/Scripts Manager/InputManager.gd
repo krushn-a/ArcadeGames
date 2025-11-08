@@ -2,6 +2,19 @@ extends Node
 
 var selected_shape: Node2D = null
 var offset: Vector2
+var target_scale: Vector2 = Vector2.ONE  # Target scale for smooth interpolation
+
+# Pinch-to-zoom tracking
+var touch_points: Dictionary = {}  # Dictionary to track touch positions
+var initial_pinch_distance: float = 0.0
+var initial_scale: Vector2 = Vector2.ONE
+var is_pinching: bool = false
+
+# Scale limits
+const MIN_SCALE: float = 0.3
+const MAX_SCALE: float = 2.0
+const SCALE_STEP: float = 0.05  # Smaller step for smoother scaling
+const SCALE_SPEED: float = 0.15  # Interpolation speed for smooth transitions
 
 func _ready():
 	# Fix CollisionPolygon2D build_mode for Area2D shapes
@@ -14,6 +27,11 @@ func _ready():
 						# Fix: Change build_mode from 1 (segments) to 0 (solids) for Area2D
 						if collision_child.build_mode == 1:
 							collision_child.build_mode = 0
+
+func _process(delta):
+	# Smoothly interpolate scale for selected shape
+	if selected_shape:
+		selected_shape.scale = selected_shape.scale.lerp(target_scale, SCALE_SPEED)
 
 func _unhandled_input(event):
 	if event.is_action_pressed("Mouse_click_drag"):
@@ -65,6 +83,7 @@ func _unhandled_input(event):
 			if topmost_shape:
 				selected_shape = topmost_shape
 				offset = selected_shape.global_position - global_mouse_pos
+				target_scale = selected_shape.scale  # Initialize target scale
 				
 				# Bring selected shape to front by moving it to the end of parent's children
 				var parent = selected_shape.get_parent()
@@ -86,3 +105,52 @@ func _unhandled_input(event):
 			global_mouse_pos = viewport.get_global_canvas_transform().affine_inverse() * event.position
 		
 		selected_shape.global_position = global_mouse_pos + offset
+	
+	# Handle pinch-to-zoom for mobile
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			touch_points[event.index] = event.position
+			# If we have 2 touches, start pinch detection
+			if touch_points.size() == 2 and selected_shape:
+				is_pinching = true
+				var touches = touch_points.values()
+				initial_pinch_distance = touches[0].distance_to(touches[1])
+				initial_scale = selected_shape.scale
+		else:
+			touch_points.erase(event.index)
+			if touch_points.size() < 2:
+				is_pinching = false
+	
+	elif event is InputEventScreenDrag:
+		touch_points[event.index] = event.position
+		# Update pinch zoom if we have 2 fingers
+		if is_pinching and touch_points.size() == 2 and selected_shape:
+			var touches = touch_points.values()
+			var current_distance = touches[0].distance_to(touches[1])
+			var scale_factor = current_distance / initial_pinch_distance
+			var new_scale = initial_scale * scale_factor
+			# Clamp scale to maintain aspect ratio
+			new_scale.x = clamp(new_scale.x, MIN_SCALE, MAX_SCALE)
+			new_scale.y = clamp(new_scale.y, MIN_SCALE, MAX_SCALE)
+			selected_shape.scale = new_scale
+	
+	# Desktop: Mouse wheel to scale
+	elif event is InputEventMouseButton and selected_shape:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
+			scale_shape(selected_shape, SCALE_STEP)
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
+			scale_shape(selected_shape, -SCALE_STEP)
+	
+	# Desktop: Keyboard shortcuts for scaling
+	elif event is InputEventKey and selected_shape and event.pressed and not event.echo:
+		if event.keycode == KEY_EQUAL or event.keycode == KEY_KP_ADD:  # + key
+			scale_shape(selected_shape, SCALE_STEP)
+		elif event.keycode == KEY_MINUS or event.keycode == KEY_KP_SUBTRACT:  # - key
+			scale_shape(selected_shape, -SCALE_STEP)
+
+# Helper function to scale shape uniformly
+func scale_shape(shape: Node2D, delta: float):
+	# Update target scale instead of directly changing scale
+	target_scale = target_scale + Vector2(delta, delta)
+	target_scale.x = clamp(target_scale.x, MIN_SCALE, MAX_SCALE)
+	target_scale.y = clamp(target_scale.y, MIN_SCALE, MAX_SCALE)
